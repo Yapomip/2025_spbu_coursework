@@ -1,0 +1,32 @@
+[package]
+name = "ns"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["burn/dataset", "burn/sqlite-bundled"]
+ndarray = ["burn/ndarray"]
+ndarray-blas-accelerate = ["burn/ndarray", "burn/accelerate"]
+ndarray-blas-netlib = ["burn/ndarray", "burn/blas-netlib"]
+ndarray-blas-openblas = ["burn/ndarray", "burn/openblas"]
+tch-cpu = ["burn/tch"]
+tch-gpu = ["burn/tch"]
+wgpu = ["burn/wgpu"]
+vulkan = ["burn/vulkan"]
+rocm = ["burn/rocm"]
+
+[dependencies]
+# Disable autotune default for convolutions
+burn = { version = "0.19.1",  features = [
+    "train",
+    "vision",
+    "std",
+    "wgpu"
+] }
+serde = { version = "1.0.228", default-features = false, features = [
+    "derive",
+    "alloc",
+]}
+csv = "1.3.1"
+rand = "0.8"
+burn-tch = "0.19.1"
