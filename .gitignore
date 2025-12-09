@@ -1,3 +1,11 @@
 ./out
 .exe
 .pdb
+/target
+/data
+/tmp
+duration.txt
+config.json
+/rust_tch
+/out
+/tch-rs
