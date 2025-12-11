@@ -60,7 +60,7 @@ mod wgpu {
     use burn::backend::wgpu::{Wgpu, WgpuDevice};
 
     pub fn run() {
-        let device = WgpuDevice::IntegratedGpu(0);
+        let device = WgpuDevice::default();
         super::run::<Wgpu>(device);
     }
 }

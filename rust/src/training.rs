@@ -6,9 +6,9 @@ use crate::{
     model::{Model, ModelConfig},
 };
 use burn::{
-    data::{dataloader::DataLoaderBuilder, dataset::vision::MnistDataset, dataset::Dataset},
+    data::{dataloader::{DataLoaderBuilder, DataLoader}, dataset::vision::MnistDataset, dataset::Dataset},
     nn::loss::{MseLoss, Reduction},
-    optim::AdamConfig,
+    optim::{AdamConfig, GradientsParams, Optimizer},
     prelude::*,
     record::CompactRecorder,
     tensor::backend::AutodiffBackend,
@@ -118,7 +118,6 @@ pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, dev
     B::seed(&device, config.seed);
 
 
-    let model = config.model.init::<B>(&device);
     let mut all_data_set = TestDataset::new();
     all_data_set.shufle();
     all_data_set.shufle();
@@ -129,53 +128,63 @@ pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, dev
     let batcher = TestBatcher {mean: all_data_set.mean.clone(), std: all_data_set.std.clone()};
     let (train, test) = all_data_set.split_by_procent(config.train_procent);
 
-    let dataloader_train = DataLoaderBuilder::new(batcher.clone())
+    let dataloader_train: Arc<dyn DataLoader<B, TestBatch<B>>> = DataLoaderBuilder::new(batcher.clone())
         .batch_size(config.batch_size)
-        .shuffle(config.seed)
+        // .shuffle(config.seed)
         .num_workers(config.num_workers)
         .build(train);
 
-    let dataloader_test = DataLoaderBuilder::new(batcher)
+    let dataloader_test: Arc<dyn DataLoader<B, TestBatch<B>>> = DataLoaderBuilder::new(batcher)
         .batch_size(config.batch_size)
         .shuffle(config.seed)
         .num_workers(config.num_workers)
         .build(test);
 
-    let learner = LearnerBuilder::new(artifact_dir)
-        .metric_train_numeric(LossMetric::new())
-        .metric_train_numeric(CpuMemory::new())
-        .metric_train_numeric(CpuUse::new())
-
-        .metric_valid_numeric(LossMetric::new())
-        .metric_valid_numeric(CpuMemory::new())
-        .metric_valid_numeric(CpuUse::new())
-
-        .with_file_checkpointer(CompactRecorder::new())
-        .learning_strategy(LearningStrategy::SingleDevice(device.clone()))
-        .num_epochs(config.num_epochs)
-
-        // .renderer(MyRenderer::default())
-
-        .summary()
-        .build(
-            model,
-            config.optimizer.init(),
-            config.learning_rate,
-        );
-
+    let mut model = config.model.init::<B>(&device);
+    let mut optimizer = config.optimizer.init::<B, Model<B>>();
     let start = Instant::now();
+    let mut iter_time_all = 0.0;
+    let mut calc_time_all = 0.0;
+    
 
-    let result = learner.fit(dataloader_train, dataloader_test);
+    for epoch in 0..config.num_epochs {
+        let iter_time = Instant::now();
+        for (iteration, batch) in dataloader_train.iter().enumerate() {
+            
+            iter_time_all += iter_time.elapsed().as_secs_f64();
+            
+            let calc_time = Instant::now();
+
+            let output = model.forward(batch.input.clone());
+            let mse_loss = MseLoss::new().forward(output.clone(), batch.targets.clone(), Reduction::Auto);
+            let mae_loss = output - batch.targets;
+            
+            // Gradients for the current backward pass
+            let grads = mse_loss.backward();
+            // Gradients linked to each parameter of the model.
+            let grads = GradientsParams::from_grads(grads, &model);
+            // Update the model using the optimizer.
+            model = optimizer.step(config.learning_rate, model, grads);
+            
+            calc_time_all += calc_time.elapsed().as_secs_f64();
+
+            println!(
+                "[Epoch {} - Iteration {}] MSE {} | MAE {}",
+                epoch,
+                iteration,
+                mse_loss.clone().into_scalar(),
+                mae_loss.max().into_scalar(),
+            );
+        }
+    }
 
     let duration = start.elapsed();
 
-    println!("{} ms", duration.as_millis());
-    println!("{} s", duration.as_secs_f64());
+    println!("TIME(s): {} {} {}", duration.as_secs_f64(), iter_time_all, calc_time_all);
     
     let _ = std::fs::write("./duration.txt", format!("{:?}\n{}\n{}", duration, duration.as_secs_f64(), duration.as_millis())).inspect_err(|e| println!("error write duration {e}"));
-
-    result
-        .model
+    
+    model
         .save_file(format!("{artifact_dir}/model"), &CompactRecorder::new())
         .expect("Trained model should be saved successfully");
 }
