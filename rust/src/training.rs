@@ -118,7 +118,7 @@ pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, dev
     B::seed(&device, config.seed);
 
 
-    let mut all_data_set = TestDataset::new();
+    let mut all_data_set = TestDataset::<B>::new(&device);
     all_data_set.shufle();
     all_data_set.shufle();
     all_data_set.shufle();
@@ -148,9 +148,8 @@ pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, dev
     
 
     for epoch in 0..config.num_epochs {
-        let iter_time = Instant::now();
+        let mut iter_time = Instant::now();
         for (iteration, batch) in dataloader_train.iter().enumerate() {
-            
             iter_time_all += iter_time.elapsed().as_secs_f64();
             
             let calc_time = Instant::now();
@@ -169,12 +168,15 @@ pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, dev
             calc_time_all += calc_time.elapsed().as_secs_f64();
 
             println!(
-                "[Epoch {} - Iteration {}] MSE {} | MAE {}",
+                "[Epoch {} - Iteration {}] MSE {} | MAE {} | TIME: iter {} calc {}",
                 epoch,
                 iteration,
                 mse_loss.clone().into_scalar(),
                 mae_loss.max().into_scalar(),
+                iter_time_all,
+                calc_time_all
             );
+            iter_time = Instant::now();
         }
     }
 

@@ -34,6 +34,22 @@ impl TestDataItem {
         let target_tensor = Tensor::<B, 2>::from_floats([[self.thermal_conductivity, self.shear_viscosity, self.bulk_viscosity]], &device);
         (input_tensor, target_tensor)
     }
+    fn to_tensor<B: Backend>(mut self, device: &B::Device) -> Tensor<B, 2> {
+        let a_len = 3 + self.n.len();
+        let mut a = Vec::with_capacity(a_len);
+        
+        a.push(self.t);
+        a.push(self.atom_n);
+        a.push(self.pressure);
+        a.append(&mut self.n);
+        a.push(self.thermal_conductivity);
+        a.push(self.shear_viscosity);
+        a.push(self.bulk_viscosity);
+        
+        let res_tensor_data = TensorData::new(a, [1, a_len]);
+        let res_tensor = Tensor::<B, 2>::from_floats(res_tensor_data, &device);
+        res_tensor
+    }
     fn normilize(&mut self, mean_element: &Self, std_element: &Self) {
         self.t = (self.t - mean_element.t) / std_element.t;
         self.pressure = (self.pressure - mean_element.pressure) / std_element.pressure;
@@ -53,15 +69,16 @@ impl TestDataItem {
 }
 
 #[derive(Clone)]
-pub struct TestDataset {
+pub struct TestDataset<B: Backend> {
     data: Vec<TestDataItem>,
+    data_in_tensor: Vec<(Tensor<B, 2>, Tensor<B, 2>)>,
     pub mean: TestDataItem,
     pub std: TestDataItem,
 }
 
-impl TestDataset {
-    pub fn new() -> Self {
-        Self::load_from("./../out2/all.csv").unwrap()
+impl<B: Backend> TestDataset<B> {
+    pub fn new(device: &B::Device) -> Self {
+        Self::load_from("./../out2/all.csv", device).unwrap()
     }
     fn read_from_csv<P: AsRef<Path>>(path: P) -> Result<Vec<TestDataItem>, std::io::Error> {
         let file = std::fs::File::open(path)?;
@@ -88,7 +105,7 @@ impl TestDataset {
 
         Ok(res)
     }
-    pub fn load_from(path: &str) -> Result<Self, std::io::Error> {
+    pub fn load_from(path: &str, device: &B::Device) -> Result<Self, std::io::Error> {
         // Build dataset from csv with tab ('\t') delimiter
         let mut data = Self::read_from_csv(path).unwrap();
 
@@ -140,7 +157,12 @@ impl TestDataset {
             data[i].normilize(&mean, &std);
         }
         
-        let dataset = Self { data, mean, std };
+        let data_in_tensor = data.iter()
+            .map(|item| item.clone().to_pair(device))
+            .collect::<Vec<_>>();
+        // let data_in_tensor = Tensor::cat(data_in_tensor, 0);
+
+        let dataset = Self { data, data_in_tensor, mean, std };
 
         Ok(dataset)
     }
@@ -157,7 +179,12 @@ impl TestDataset {
         self.shufle_n(self.len())
     }
     pub fn split_by_index(mut self, index: usize) -> (Self, Self) {
-        let other = Self { data: self.data.split_off(index), mean: self.mean.clone(), std: self.std.clone() };
+        let other = Self { 
+            data: self.data.split_off(index), 
+            data_in_tensor: self.data_in_tensor.split_off(index), 
+            mean: self.mean.clone(), 
+            std: self.std.clone() 
+        };
         (self, other)
     }
     pub fn split_by_procent(self, p: f64) -> (Self, Self) {
@@ -170,9 +197,9 @@ impl TestDataset {
 }
 
 // Implement the `Dataset` trait which requires `get` and `len`
-impl Dataset<TestDataItem> for TestDataset {
-    fn get(&self, index: usize) -> Option<TestDataItem> {
-        self.data.get(index).map(|x| x.clone())
+impl<B: Backend> Dataset<(Tensor<B, 2>, Tensor<B, 2>)> for TestDataset<B> {
+    fn get(&self, index: usize) -> Option<(Tensor<B, 2>, Tensor<B, 2>)> {
+        self.data_in_tensor.get(index).map(|x| x.clone())
     }
 
     fn len(&self) -> usize {
@@ -192,14 +219,17 @@ pub struct TestBatch<B: Backend> {
     pub targets: Tensor<B, 2>,
 }
 
-impl<B: Backend> Batcher<B, TestDataItem, TestBatch<B>> for TestBatcher {
-    fn batch(&self, items: Vec<TestDataItem>, device: &B::Device) -> TestBatch<B> {
-        let items = items.into_iter()
-            .map(|item| item.to_pair(device))
-            .collect::<(Vec<_>, Vec<_>)>();
+impl<B: Backend> Batcher<B, (Tensor<B, 2>, Tensor<B, 2>), TestBatch<B>> for TestBatcher {
+    fn batch(&self, items: Vec<(Tensor<B, 2>, Tensor<B, 2>)>, device: &B::Device) -> TestBatch<B> {
+        // let items = items.into_iter()
+        //     .map(|item| item.to_pair(device))
+        //     .collect::<(Vec<_>, Vec<_>)>();
+        // let input = Tensor::cat(items.0, 0);
+        // let targets = Tensor::cat(items.1, 0);
+        // // println!("batcher call: {}", input.dims()[0]);
+        let items = items.into_iter().collect::<(Vec<_>, Vec<_>)>();
         let input = Tensor::cat(items.0, 0);
         let targets = Tensor::cat(items.1, 0);
-        // println!("batcher call: {}", input.dims()[0]);
         TestBatch { input, targets }
     }
 }

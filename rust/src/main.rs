@@ -109,13 +109,9 @@ pub fn run<B: Backend>(device: B::Device) {
 
     let _ = config.save("./config.json").inspect_err(|e| println!("{e}") );
     
-    let mut dataset = TestDataset::new();
-    dataset.shufle();
-    let items = dataset.iter().take(5).collect::<Vec<_>>();
     inference::infer::<B>(
         ARTIFACT_DIR,
         device,
-        items
     );
 }
 
