@@ -14,10 +14,11 @@ pub fn infer<B: Backend>(artifact_dir: &str, device: B::Device) {
 
     // let dataset = TestDataset::new();
     // let target = dataset.get(200).unwrap();
-    let mut dataset = TestDataset::<B>::new(&device);
+    let mut dataset = TestDataset::new();
     dataset.shufle();
-    let items = dataset.iter().take(5).collect::<Vec<_>>();
     
+    let items = dataset.to_gpu_dataset(&device).iter().take(5).collect::<Vec<_>>();
+
     let batcher = TestBatcher::default();
     let batch = batcher.batch(items, &device);
     // let output = model.forward(batch.input.clone());

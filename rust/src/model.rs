@@ -16,15 +16,17 @@ pub struct Model<B: Backend> {
     linear3: Linear<B>,
     // linear4: Linear<B>,
     output: Linear<B>,
+    dropout: Dropout,
 }
 
 #[derive(Config, Debug)]
 pub struct ModelConfig {
-    
     #[config(default = "51")]
     input_size: usize,
     #[config(default = "100")]
     hidden_size: usize,
+    #[config(default = "0.1")]
+    dropout_p: f64,
 }
 
 impl ModelConfig {
@@ -38,14 +40,15 @@ impl ModelConfig {
             linear3: LinearConfig::new(self.hidden_size, self.hidden_size).with_bias(true).init(device),
             // linear4: LinearConfig::new(self.hidden_size, self.hidden_size).with_bias(true).init(device),
             output: LinearConfig::new(self.hidden_size, 3).with_bias(true).init(device),
+            dropout: DropoutConfig::new(self.dropout_p).init(),
         }
     }
 }
 
 impl<B: Backend> Model<B> {
     /// # Shapes
-    ///   - Images [batch_size, height, width]
-    ///   - Output [batch_size, class_prob]
+    ///   - Images [batch_size, _]
+    ///   - Output [batch_size, _]
     pub fn forward(&self, x: Tensor<B, 2>) -> Tensor<B, 2> {
         let x = self.input.forward(x);
         let x = self.activation.forward(x);

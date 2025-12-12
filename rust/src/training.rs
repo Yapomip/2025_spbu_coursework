@@ -118,7 +118,7 @@ pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, dev
     B::seed(&device, config.seed);
 
 
-    let mut all_data_set = TestDataset::<B>::new(&device);
+    let mut all_data_set = TestDataset::new();
     all_data_set.shufle();
     all_data_set.shufle();
     all_data_set.shufle();
@@ -128,65 +128,77 @@ pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, dev
     let batcher = TestBatcher {mean: all_data_set.mean.clone(), std: all_data_set.std.clone()};
     let (train, test) = all_data_set.split_by_procent(config.train_procent);
 
-    let dataloader_train: Arc<dyn DataLoader<B, TestBatch<B>>> = DataLoaderBuilder::new(batcher.clone())
-        .batch_size(config.batch_size)
-        // .shuffle(config.seed)
-        .num_workers(config.num_workers)
-        .build(train);
-
-    let dataloader_test: Arc<dyn DataLoader<B, TestBatch<B>>> = DataLoaderBuilder::new(batcher)
+    let dataloader_train = DataLoaderBuilder::new(batcher.clone())
         .batch_size(config.batch_size)
         .shuffle(config.seed)
         .num_workers(config.num_workers)
-        .build(test);
+        .build(train.to_gpu_dataset::<B>(&device));
 
-    let mut model = config.model.init::<B>(&device);
-    let mut optimizer = config.optimizer.init::<B, Model<B>>();
+    let dataloader_test = DataLoaderBuilder::new(batcher)
+        .batch_size(config.batch_size)
+        .shuffle(config.seed)
+        .num_workers(config.num_workers)
+        .build(test.to_gpu_dataset::<B::InnerBackend>(&device));
+
+    let mut model = config.model.init(&device);
+    let mut optimizer = config.optimizer.init();
+
+    let learner = LearnerBuilder::new(artifact_dir)
+        .metric_train_numeric(LossMetric::new())
+        .metric_valid_numeric(LossMetric::new())
+        .with_file_checkpointer(CompactRecorder::new())
+        .num_epochs(config.num_epochs)
+        .learning_strategy(LearningStrategy::SingleDevice(device.clone()))
+        .summary()
+        .build(
+            model,
+            optimizer,
+            config.learning_rate,
+        );
+
     let start = Instant::now();
-    let mut iter_time_all = 0.0;
-    let mut calc_time_all = 0.0;
     
-
-    for epoch in 0..config.num_epochs {
-        let mut iter_time = Instant::now();
-        for (iteration, batch) in dataloader_train.iter().enumerate() {
-            iter_time_all += iter_time.elapsed().as_secs_f64();
-            
-            let calc_time = Instant::now();
-
-            let output = model.forward(batch.input.clone());
-            let mse_loss = MseLoss::new().forward(output.clone(), batch.targets.clone(), Reduction::Auto);
-            let mae_loss = output - batch.targets;
-            
-            // Gradients for the current backward pass
-            let grads = mse_loss.backward();
-            // Gradients linked to each parameter of the model.
-            let grads = GradientsParams::from_grads(grads, &model);
-            // Update the model using the optimizer.
-            model = optimizer.step(config.learning_rate, model, grads);
-            
-            calc_time_all += calc_time.elapsed().as_secs_f64();
-
-            println!(
-                "[Epoch {} - Iteration {}] MSE {} | MAE {} | TIME: iter {} calc {}",
-                epoch,
-                iteration,
-                mse_loss.clone().into_scalar(),
-                mae_loss.max().into_scalar(),
-                iter_time_all,
-                calc_time_all
-            );
-            iter_time = Instant::now();
-        }
-    }
+    // for epoch in 0..config.num_epochs {
+    //     let mut iter_time = Instant::now();
+    //     for (iteration, batch) in dataloader_train.iter().enumerate() {
+    //         iter_time_all += iter_time.elapsed().as_secs_f64();
+    //         
+    //         let calc_time = Instant::now();
+// 
+    //         let output = model.forward(batch.input.clone());
+    //         let mse_loss = MseLoss::new().forward(output.clone(), batch.targets.clone(), Reduction::Auto);
+    //         let mae_loss = output - batch.targets;
+    //         
+    //         // Gradients for the current backward pass
+    //         let grads = mse_loss.backward();
+    //         // Gradients linked to each parameter of the model.
+    //         let grads = GradientsParams::from_grads(grads, &model);
+    //         // Update the model using the optimizer.
+    //         model = optimizer.step(config.learning_rate, model, grads);
+    //         
+    //         calc_time_all += calc_time.elapsed().as_secs_f64();
+// 
+    //         println!(
+    //             "[Epoch {} - Iteration {}] MSE {} | MAE {} | TIME: iter {} calc {}",
+    //             epoch,
+    //             iteration,
+    //             mse_loss.clone().into_scalar(),
+    //             mae_loss.max().into_scalar(),
+    //             iter_time_all,
+    //             calc_time_all
+    //         );
+    //         iter_time = Instant::now();
+    //     }
+    // }
+    let result = learner.fit(dataloader_train, dataloader_test);
 
     let duration = start.elapsed();
 
-    println!("TIME(s): {} {} {}", duration.as_secs_f64(), iter_time_all, calc_time_all);
+    println!("TIME(s): {}", duration.as_secs_f64());
     
     let _ = std::fs::write("./duration.txt", format!("{:?}\n{}\n{}", duration, duration.as_secs_f64(), duration.as_millis())).inspect_err(|e| println!("error write duration {e}"));
     
-    model
+    result.model
         .save_file(format!("{artifact_dir}/model"), &CompactRecorder::new())
         .expect("Trained model should be saved successfully");
 }

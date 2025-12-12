@@ -30,3 +30,5 @@ serde = { version = "1.0.228", default-features = false, features = [
 csv = "1.3.1"
 rand = "0.8"
 burn-tch = "0.19.1"
+
+kappa_wrapper = { path="./kappa_wrapper" }

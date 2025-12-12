@@ -1,0 +1,19 @@
+[package]
+name = "kappa_wrapper"
+version = "0.1.0"
+edition = "2024"
+build="build.rs"
+
+[dependencies]
+libc = "0.2.178"
+
+[[example]]
+name = "1"
+path = "examples/1.rs"
+
+[build-dependencies]
+anyhow = "1.0.100"
+cmake = "0.1.31"
+conan2 = "0.1.8"
+cxx-build = "1.0.190"
+git2 = "0.20.3"

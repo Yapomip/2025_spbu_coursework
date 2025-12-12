@@ -1,5 +1,6 @@
 use std::{clone, default, io::BufRead, iter, num::ParseFloatError, path::Path, vec, };
 use std::process::Command;
+use core::slice::Iter;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use burn::{
@@ -69,16 +70,15 @@ impl TestDataItem {
 }
 
 #[derive(Clone)]
-pub struct TestDataset<B: Backend> {
+pub struct TestDataset {
     data: Vec<TestDataItem>,
-    data_in_tensor: Vec<(Tensor<B, 2>, Tensor<B, 2>)>,
     pub mean: TestDataItem,
     pub std: TestDataItem,
 }
 
-impl<B: Backend> TestDataset<B> {
-    pub fn new(device: &B::Device) -> Self {
-        Self::load_from("./../out2/all.csv", device).unwrap()
+impl TestDataset {
+    pub fn new() -> Self {
+        Self::load_from("./../out2/all.csv").unwrap()
     }
     fn read_from_csv<P: AsRef<Path>>(path: P) -> Result<Vec<TestDataItem>, std::io::Error> {
         let file = std::fs::File::open(path)?;
@@ -105,7 +105,7 @@ impl<B: Backend> TestDataset<B> {
 
         Ok(res)
     }
-    pub fn load_from(path: &str, device: &B::Device) -> Result<Self, std::io::Error> {
+    pub fn load_from(path: &str) -> Result<Self, std::io::Error> {
         // Build dataset from csv with tab ('\t') delimiter
         let mut data = Self::read_from_csv(path).unwrap();
 
@@ -157,12 +157,9 @@ impl<B: Backend> TestDataset<B> {
             data[i].normilize(&mean, &std);
         }
         
-        let data_in_tensor = data.iter()
-            .map(|item| item.clone().to_pair(device))
-            .collect::<Vec<_>>();
         // let data_in_tensor = Tensor::cat(data_in_tensor, 0);
 
-        let dataset = Self { data, data_in_tensor, mean, std };
+        let dataset = Self { data, mean, std };
 
         Ok(dataset)
     }
@@ -181,7 +178,6 @@ impl<B: Backend> TestDataset<B> {
     pub fn split_by_index(mut self, index: usize) -> (Self, Self) {
         let other = Self { 
             data: self.data.split_off(index), 
-            data_in_tensor: self.data_in_tensor.split_off(index), 
             mean: self.mean.clone(), 
             std: self.std.clone() 
         };
@@ -194,16 +190,35 @@ impl<B: Backend> TestDataset<B> {
         let index = (self.len() as f64 * p) as usize;
         self.split_by_index(index)
     }
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+
+    pub fn to_gpu_dataset<B: Backend>(self, device: &B::Device) -> InGPUDataset<B> {
+        let data_in_tensor = self.data.into_iter()
+            .map(|item| item.to_pair(device))
+            .collect::<Vec<_>>();
+        InGPUDataset { data_in_tensor }
+    }
+    pub fn iter(&self) -> Iter<'_, TestDataItem> {
+        self.data.iter()
+    }
 }
 
+pub struct InGPUDataset<B: Backend> {
+    data_in_tensor: Vec<(Tensor<B, 2>, Tensor<B, 2>)>
+}
+
+impl<B: Backend> InGPUDataset<B> {}
+
 // Implement the `Dataset` trait which requires `get` and `len`
-impl<B: Backend> Dataset<(Tensor<B, 2>, Tensor<B, 2>)> for TestDataset<B> {
+impl<B: Backend> Dataset<(Tensor<B, 2>, Tensor<B, 2>)> for InGPUDataset<B> {
     fn get(&self, index: usize) -> Option<(Tensor<B, 2>, Tensor<B, 2>)> {
         self.data_in_tensor.get(index).map(|x| x.clone())
     }
 
     fn len(&self) -> usize {
-        self.data.len()
+        self.data_in_tensor.len()
     }
 }
 
@@ -228,8 +243,8 @@ impl<B: Backend> Batcher<B, (Tensor<B, 2>, Tensor<B, 2>), TestBatch<B>> for Test
         // let targets = Tensor::cat(items.1, 0);
         // // println!("batcher call: {}", input.dims()[0]);
         let items = items.into_iter().collect::<(Vec<_>, Vec<_>)>();
-        let input = Tensor::cat(items.0, 0);
-        let targets = Tensor::cat(items.1, 0);
+        let input = Tensor::cat(items.0, 0).to_device(device);
+        let targets = Tensor::cat(items.1, 0).to_device(device);
         TestBatch { input, targets }
     }
 }

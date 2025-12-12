@@ -23,6 +23,9 @@ use dataset::TestDataset;
 use model::ModelConfig;
 use training::{TrainingConfig};
 
+extern crate kappa_wrapper as kappa;
+use kappa::add;
+
 static ARTIFACT_DIR: &str = "./tmp/";
 
 #[cfg(any(
