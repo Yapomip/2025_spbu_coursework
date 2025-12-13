@@ -10,3 +10,5 @@ config.json
 /tch-rs
 /libfoo
 /libhello
+/kappa++
+./src/hellomod.rs
