@@ -8,3 +8,4 @@ config.json
 /rust_tch
 /out
 /tch-rs
+/bindgen-tutorial-bzip2-sys

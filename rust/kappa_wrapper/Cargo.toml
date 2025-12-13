@@ -12,8 +12,7 @@ name = "1"
 path = "examples/1.rs"
 
 [build-dependencies]
+bindgen = "0.72.1"
 anyhow = "1.0.100"
 cmake = "0.1.31"
-conan2 = "0.1.8"
-cxx-build = "1.0.190"
 git2 = "0.20.3"

@@ -8,3 +8,5 @@ config.json
 /rust_tch
 /out
 /tch-rs
+/libfoo
+/libhello
