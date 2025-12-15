@@ -4044,7 +4044,6 @@ name = "ns"
 version = "0.1.0"
 dependencies = [
  "burn",
- "burn-tch",
  "csv",
  "kappa_wrapper",
  "rand 0.8.5",
