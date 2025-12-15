@@ -1,4 +1,2 @@
 
-#include "libhello/include/hello.h"
-
-#include "kappa.hpp"
+#include "kappa_c_wrap/lib/wrap.h"

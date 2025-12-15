@@ -120,6 +120,7 @@ pub fn run<B: Backend>(device: B::Device) {
 
 
 fn main() {
+    add(2, 2);
     #[cfg(feature = "vulkan")]
     vulkan::run();
     #[cfg(feature = "rocm")]

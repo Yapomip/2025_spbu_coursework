@@ -8,3 +8,6 @@ config.json
 /rust_tch
 /out
 /tch-rs
+/kappa
+/tash save --keep-index
+/out2

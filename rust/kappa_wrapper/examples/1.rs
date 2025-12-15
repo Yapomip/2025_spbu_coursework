@@ -1,10 +1,8 @@
 use kappa_wrapper::add;
-use kappa_wrapper::test_call;
-use kappa_wrapper::hello;
+use kappa_wrapper::a;
 
 fn main() {
     let c = add(2, 2);
     println!("{c}");
-    test_call(c as f32);
-    unsafe { hello(); }
+    a("./kappa_c_wrap/");
 }
