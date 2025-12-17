@@ -27,9 +27,9 @@ impl<B: Backend> Model<B> {
         item: TestBatch<B>,
     ) -> RegressionOutput<B> {
         let output = self.forward(item.input);
-        let targets = item.targets;
-        let loss = MseLoss::new().forward(output.clone(), targets.clone(), Reduction::Sum);
-        RegressionOutput::new(loss, output, targets)
+        // let targets = item.targets;
+        let loss = MseLoss::new().forward(output.clone(), item.targets.clone(), Reduction::Sum);
+        RegressionOutput::new(loss, output, item.targets)
     }
     /// output tagrets loss
     pub fn forward_no_reduction_step(
@@ -62,16 +62,18 @@ struct MyRenderer;
 
 impl MetricsRendererEvaluation for MyRenderer {
     fn render_test(&mut self, item: burn::train::renderer::EvaluationProgress) {
-        print!("{}: ", item.progress.items_processed as f64 / item.progress.items_total as f64);
+        // print!("{}: ", item.progress.items_processed as f64 / item.progress.items_total as f64);
     }
-    fn update_test(&mut self, name: burn::train::renderer::EvaluationName, state: burn::train::renderer::MetricState) {}
+    fn update_test(&mut self, name: burn::train::renderer::EvaluationName, state: burn::train::renderer::MetricState) {
+        println!("train {state:?}");
+    }
 }
 impl MetricsRendererTraining for MyRenderer {
     fn render_train(&mut self, item: burn::train::renderer::TrainingProgress) {
-        println!("train {item:?}");
+        // println!("train {item:?}");
     }
     fn render_valid(&mut self, item: burn::train::renderer::TrainingProgress) {
-        println!("valid {item:?}");
+        // println!("valid {item:?}");
     }
     fn update_train(&mut self, state: burn::train::renderer::MetricState) {
         // match state => {
@@ -126,7 +128,12 @@ pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, dev
     all_data_set.iter().take(5).for_each(|item| { println!("{item:?}"); });
 
     let batcher = TestBatcher {mean: all_data_set.mean.clone(), std: all_data_set.std.clone()};
-    let (train, test) = all_data_set.split_by_procent(config.train_procent);
+    // let (train, _) = all_data_set.split_by_procent(config.train_procent);
+    let a = all_data_set.len();
+    let (train, _) = all_data_set.split_by_index(a);
+    let (train, test) = train.split_by_index((a as f64 * config.train_procent) as usize);
+
+    test.save_to_csv(format!("{artifact_dir}/test.csv"));
 
     let dataloader_train = DataLoaderBuilder::new(batcher.clone())
         .batch_size(config.batch_size)
@@ -149,6 +156,7 @@ pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, dev
         .with_file_checkpointer(CompactRecorder::new())
         .num_epochs(config.num_epochs)
         .learning_strategy(LearningStrategy::SingleDevice(device.clone()))
+        .renderer(MyRenderer::default())
         .summary()
         .build(
             model,

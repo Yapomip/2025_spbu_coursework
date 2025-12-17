@@ -11,3 +11,7 @@ config.json
 /kappa
 /tash save --keep-index
 /out2
+*.txt
+g.ipynb
+*.mpk
+*.csv

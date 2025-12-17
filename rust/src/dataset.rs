@@ -1,4 +1,5 @@
-use std::{clone, default, io::BufRead, iter, num::ParseFloatError, path::Path, vec, };
+use std::io::Write;
+use std::{clone, default, io::BufRead, iter, num::ParseFloatError, path::Path, vec, io::BufWriter};
 use std::process::Command;
 use core::slice::Iter;
 use rand::Rng;
@@ -22,7 +23,7 @@ pub struct TestDataItem {
 
 impl TestDataItem {
     fn to_pair<B: Backend>(mut self, device: &B::Device) -> (Tensor<B, 2>, Tensor<B, 2>) {
-        let a_len = 3 + self.n.len();
+        let a_len: usize = 3 + self.n.len();
         let mut a = Vec::with_capacity(a_len);
         
         a.push(self.t);
@@ -36,20 +37,22 @@ impl TestDataItem {
         (input_tensor, target_tensor)
     }
     fn to_tensor<B: Backend>(mut self, device: &B::Device) -> Tensor<B, 2> {
-        let a_len = 3 + self.n.len();
-        let mut a = Vec::with_capacity(a_len);
-        
-        a.push(self.t);
-        a.push(self.atom_n);
-        a.push(self.pressure);
-        a.append(&mut self.n);
-        a.push(self.thermal_conductivity);
-        a.push(self.shear_viscosity);
-        a.push(self.bulk_viscosity);
-        
-        let res_tensor_data = TensorData::new(a, [1, a_len]);
-        let res_tensor = Tensor::<B, 2>::from_floats(res_tensor_data, &device);
-        res_tensor
+        // let a_len = 3 + self.n.len();
+        // let mut a = Vec::with_capacity(a_len);
+        // 
+        // a.push(self.t);
+        // a.push(self.atom_n);
+        // a.push(self.pressure);
+        // a.append(&mut self.n);
+        // a.push(self.thermal_conductivity);
+        // a.push(self.shear_viscosity);
+        // a.push(self.bulk_viscosity);
+        // 
+        // let res_tensor_data = TensorData::new(a, [1, a_len]);
+        // let res_tensor = Tensor::<B, 2>::from_floats(res_tensor_data, &device);
+        // res_tensor
+        let ts = self.to_pair(device);
+        Tensor::cat(vec![ts.0, ts.1], 0)
     }
     fn normilize(&mut self, mean_element: &Self, std_element: &Self) {
         self.t = (self.t - mean_element.t) / std_element.t;
@@ -79,6 +82,44 @@ pub struct TestDataset {
 impl TestDataset {
     pub fn new() -> Self {
         Self::load_from("./../out2/all.csv").unwrap()
+    }
+    pub fn save_to_csv<P: AsRef<Path>>(&self, path: P) {
+        
+        let file = std::fs::File::create_new(path).unwrap();
+        let mut writer = std::io::BufWriter::new(file);
+
+        self.data.iter().take(1).for_each(|item| {
+            writer.write_fmt(
+                format_args!("T;pressure;atom_n;")
+            ).unwrap();
+
+            (0..item.n.len()).for_each(|i| {
+                writer.write_fmt(
+                format_args!("n{};", i)
+                ).unwrap();
+            });
+            writer.write_fmt(
+                format_args!("thermal_conductivity;shear_viscosity;bulk_viscosity")
+            ).unwrap();
+        });
+
+        self.data.iter().for_each(|item: &TestDataItem| {
+            writer.write_fmt(
+                format_args!("{};{};{};", item.t, item.pressure, item.atom_n)
+            ).unwrap();
+
+            item.n.iter().for_each(|n| {
+                writer.write_fmt(
+                format_args!("{};", n)
+                ).unwrap();
+            });
+            writer.write_fmt(
+                format_args!("{};{};{}\n", item.thermal_conductivity, item.shear_viscosity, item.bulk_viscosity)
+            ).unwrap();
+        });
+
+        println!("{:?} {:?}", self.mean, self.std);
+        std::fs::write("./a.txt", format!("{:?} {:?}", self.mean, self.std)).unwrap();
     }
     fn read_from_csv<P: AsRef<Path>>(path: P) -> Result<Vec<TestDataItem>, std::io::Error> {
         let file = std::fs::File::open(path)?;
@@ -214,7 +255,8 @@ impl<B: Backend> InGPUDataset<B> {}
 // Implement the `Dataset` trait which requires `get` and `len`
 impl<B: Backend> Dataset<(Tensor<B, 2>, Tensor<B, 2>)> for InGPUDataset<B> {
     fn get(&self, index: usize) -> Option<(Tensor<B, 2>, Tensor<B, 2>)> {
-        self.data_in_tensor.get(index).map(|x| x.clone())
+        // self.data_in_tensor.get(index).map(|x| x.clone())
+        self.data_in_tensor.get(index).cloned()
     }
 
     fn len(&self) -> usize {
@@ -243,8 +285,8 @@ impl<B: Backend> Batcher<B, (Tensor<B, 2>, Tensor<B, 2>), TestBatch<B>> for Test
         // let targets = Tensor::cat(items.1, 0);
         // // println!("batcher call: {}", input.dims()[0]);
         let items = items.into_iter().collect::<(Vec<_>, Vec<_>)>();
-        let input = Tensor::cat(items.0, 0).to_device(device);
-        let targets = Tensor::cat(items.1, 0).to_device(device);
+        let input = Tensor::cat(items.0, 0);
+        let targets = Tensor::cat(items.1, 0);
         TestBatch { input, targets }
     }
 }
