@@ -9,4 +9,3 @@ config.json
 /out
 /tch-rs
 /bindgen-tutorial-bzip2-sys
-*.txt
