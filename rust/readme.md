@@ -1,4 +1,6 @@
 
+git clone --recurse-submodules
+
 // my fork of https://github.com/lkampoli/kappa
 // https://github.com/Yapomip/kappa
 kappa:
@@ -10,7 +12,7 @@ kappa_c_wrap:
     c interface for kappa
     (not all kappa function wrapped)
 
-kappa_wrapper:
+kappa_rust:
     library on rust
     connect to kappa_c_wrap
     interface for kappa on rust

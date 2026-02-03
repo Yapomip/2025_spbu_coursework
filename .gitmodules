@@ -1,0 +1,3 @@
+[submodule "rust/kappa"]
+	path = rust/kappa
+	url = https://github.com/Yapomip/kappa.git

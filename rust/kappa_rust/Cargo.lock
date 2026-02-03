@@ -277,7 +277,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "kappa_wrapper"
+name = "kappa_rust"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -285,6 +285,7 @@ dependencies = [
  "cmake",
  "git2",
  "libc",
+ "link-cplusplus",
 ]
 
 [[package]]
@@ -341,6 +342,15 @@ dependencies = [
  "libc",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "link-cplusplus"
+version = "1.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f78c730aaa7d0b9336a299029ea49f9ee53b0ed06e9202e8cb7db9bae7b8c82"
+dependencies = [
+ "cc",
 ]
 
 [[package]]

@@ -1,0 +1,8 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/kappa_c_wrapTargets.cmake")
+
+include(CMakeFindDependencyMacro)
+find_dependency(kappa++ REQUIRED)
+
+check_required_components(kappa_c_wrap)

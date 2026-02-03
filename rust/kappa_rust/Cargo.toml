@@ -1,11 +1,12 @@
 [package]
-name = "kappa_wrapper"
+name = "kappa_rust"
 version = "0.1.0"
 edition = "2024"
 build="build.rs"
 
 [dependencies]
 libc = "0.2.178"
+link-cplusplus = "1.0.12"
 
 [[example]]
 name = "1"
