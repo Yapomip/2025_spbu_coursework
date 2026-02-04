@@ -7,6 +7,7 @@ include(FetchContent)
 option(KAPPA_C_WRAP_EXAMPLE "Build example" OFF)
 
 set(KAPPA_DIST_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 # FetchContent_Declare(
 #   kappa
 #   GIT_REPOSITORY https://github.com/Yapomip/kappa.git
@@ -16,10 +17,9 @@ set(KAPPA_DIST_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../kappa ${CMAKE_CURRENT_SOURCE_DIR}/../kappa/build)
 find_package(kappa++ REQUIRED PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../kappa/install)
+message(STATUS "kappa++: \"${kappa++_DIR}\"")
 
 add_subdirectory(src)
-
-message(${CMAKE_CURRENT_SOURCE_DIR})
 
 if (KAPPA_C_WRAP_EXAMPLE)
     add_subdirectory(example)
