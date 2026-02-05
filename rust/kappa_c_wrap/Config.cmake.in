@@ -3,7 +3,7 @@
 include("${CMAKE_CURRENT_LIST_DIR}/kappa_c_wrapTargets.cmake")
 
 set(kappa++_DIR "@kappa++_DIR@")
-if(NOT DEFINED kappa++_DIR)
+if(kappa++_DIR)
     include(CMakeFindDependencyMacro)
     find_dependency(kappa++ REQUIRED HINTS ${kappa++_DIR})
 endif()

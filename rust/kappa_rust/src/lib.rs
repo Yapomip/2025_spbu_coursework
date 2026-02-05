@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 use std::path::Path;
 use std::slice;
 
-use kappa_c_wrap::root::*;
+use kappa_c_wrap::*;
 
 extern crate link_cplusplus;
 
@@ -131,7 +131,7 @@ pub struct Mixture {
     components_count: usize,
 }
 
-pub type CalculateParams = kappa_c_wrap::root::KCW_CalculateParams;
+pub type CalculateParams = kappa_c_wrap::KCW_CalculateParams;
 
 impl Mixture {
     /// if len size difficults all cuts by min
@@ -311,8 +311,8 @@ impl<'a> Drop for MixtureDistribution<'a> {
     }
 }
 
-pub type TransportCoefficient = kappa_c_wrap::root::KCW_TransportCoefficient;
-type TransportCoefficientArray = kappa_c_wrap::root::KCW_TransportCoefficientArray;
+pub type TransportCoefficient = kappa_c_wrap::KCW_TransportCoefficient;
+type TransportCoefficientArray = kappa_c_wrap::KCW_TransportCoefficientArray;
 pub struct TransportCoefficientWrap {
     array: TransportCoefficientArray,
 }

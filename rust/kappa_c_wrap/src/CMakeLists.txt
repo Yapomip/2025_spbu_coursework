@@ -23,7 +23,10 @@ install(
 install(
     TARGETS kappa_c_wrap 
     EXPORT kappa_c_wrapTargets
-    DESTINATION lib 
+    LIBRARY DESTINATION lib 
+    ARCHIVE DESTINATION lib 
+    INCLUDES DESTINATION include
+    RUNTIME DESTINATION lib
 )
 
 install(

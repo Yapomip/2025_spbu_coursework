@@ -1,4 +1,4 @@
-
+# It start only on windows
 cmake_minimum_required(VERSION 3.5...3.25)
 project(dll_collector C)
 
@@ -19,8 +19,8 @@ if(NOT TARGET kappa_c_wrap)
     message(FATAL_ERROR "NOT OK")
 endif()
 
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/dummy.cpp" "int main() {return 0;} ")
-add_executable(dll_collector "${CMAKE_CURRENT_BINARY_DIR}/dummy.cpp")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/dummy.c" "int main() {return 0;}")
+add_executable(dll_collector "${CMAKE_CURRENT_BINARY_DIR}/dummy.c")
 target_link_libraries(dll_collector kappa_c_wrap)
 
 # add_library(dll_collector MODULE)
@@ -29,9 +29,23 @@ target_link_libraries(dll_collector kappa_c_wrap)
 add_custom_command(
     TARGET dll_collector POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_RUNTIME_DLLS:dll_collector>
-    ${COPY_TO_DIR}
-    COMMAND_EXPAND_LISTS
-    COMMENT "Copying $<TARGET_RUNTIME_DLLS:dll_collector> to ${COPY_TO_DIR}"
+        $<TARGET_RUNTIME_DLLS:dll_collector>
+        ${COPY_TO_DIR}
+        COMMAND_EXPAND_LISTS
+        COMMENT "Copying $<TARGET_RUNTIME_DLLS:dll_collector> to ${COPY_TO_DIR}"
 )
 message(STATUS "Set dlls copying")
+
+# get_target_property(libs dll_collector LINK_LIBRARIES)
+# foreach(lib ${libs})
+#     if(TARGET ${lib})
+#         add_custom_command(
+#             TARGET dll_collector POST_BUILD
+#             COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#                 $<TARGET_PROPERTY:${lib},IMPORTED_IMPLIB>
+#                 ${COPY_TO_DIR}
+#                 COMMAND_EXPAND_LISTS
+#                 COMMENT "Copying $<TARGET_PROPERTY:kappa++,IMPORTED_IMPLIB> to ${COPY_TO_DIR}"
+#         )
+#     endif()
+# endforeach()
