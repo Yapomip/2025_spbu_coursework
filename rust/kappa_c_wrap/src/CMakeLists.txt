@@ -15,10 +15,7 @@ target_include_directories(kappa_c_wrap PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
-install(
-    FILES "wrap.h"
-    DESTINATION include
-)
+install(FILES "wrap.h" DESTINATION include)
 
 install(
     TARGETS kappa_c_wrap 
