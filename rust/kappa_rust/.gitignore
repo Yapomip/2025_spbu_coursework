@@ -12,3 +12,4 @@ config.json
 /libhello
 /kappa++
 ./src/hellomod.rs
+/build

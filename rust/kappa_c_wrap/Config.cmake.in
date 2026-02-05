@@ -2,7 +2,10 @@
 
 include("${CMAKE_CURRENT_LIST_DIR}/kappa_c_wrapTargets.cmake")
 
-include(CMakeFindDependencyMacro)
-find_dependency(kappa++ REQUIRED)
+set(kappa++_DIR "@kappa++_DIR@")
+if(NOT DEFINED kappa++_DIR)
+    include(CMakeFindDependencyMacro)
+    find_dependency(kappa++ REQUIRED HINTS ${kappa++_DIR})
+endif()
 
 check_required_components(kappa_c_wrap)

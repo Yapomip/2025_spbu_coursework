@@ -4,19 +4,18 @@
 pub mod root {
     #[allow(unused_imports)]
     use self::super::root;
+    pub const __bool_true_false_are_defined: u32 = 1;
     pub const KCW_Answer_KWC_OK: KCW_Answer = 0;
     pub const KCW_Answer_KWC_NOT_OK: KCW_Answer = 1;
-    pub type KCW_Answer = ::std::os::raw::c_uint;
+    pub type KCW_Answer = ::std::os::raw::c_int;
     pub type KCW_Context = *mut ::std::os::raw::c_void;
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z17KCW_CreateContextPKcPPv"]
         pub fn KCW_CreateContext(
             path: *const ::std::os::raw::c_char,
             result: *mut root::KCW_Context,
         ) -> root::KCW_Answer;
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z26KCW_CreateContextFromPathsPKcS0_PPv"]
         pub fn KCW_CreateContextFromPaths(
             path_particles: *const ::std::os::raw::c_char,
             path_interaction: *const ::std::os::raw::c_char,
@@ -24,7 +23,6 @@ pub mod root {
         ) -> root::KCW_Answer;
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z18KCW_DestroyContextPv"]
         pub fn KCW_DestroyContext(context: root::KCW_Context);
     }
     pub type KCW_Molecula = *mut ::std::os::raw::c_void;
@@ -37,7 +35,6 @@ pub mod root {
         pub rigid_rotator: bool,
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z18KCW_CreateMolecula23KCW_MoleculaBuildParamsPKvPPv"]
         pub fn KCW_CreateMolecula(
             molecula_build: root::KCW_MoleculaBuildParams,
             context: *const ::std::os::raw::c_void,
@@ -45,7 +42,6 @@ pub mod root {
         ) -> root::KCW_Answer;
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z19KCW_DestroyMoleculaPv"]
         pub fn KCW_DestroyMolecula(molecula: root::KCW_Molecula);
     }
     pub type KCW_Atom = *mut ::std::os::raw::c_void;
@@ -55,7 +51,6 @@ pub mod root {
         pub name: *const ::std::os::raw::c_char,
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z14KCW_CreateAtom19KCW_AtomBuildParamsPKvPPv"]
         pub fn KCW_CreateAtom(
             atom_build: root::KCW_AtomBuildParams,
             context: *const ::std::os::raw::c_void,
@@ -63,7 +58,6 @@ pub mod root {
         ) -> root::KCW_Answer;
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z15KCW_DestroyAtomPv"]
         pub fn KCW_DestroyAtom(atom: root::KCW_Atom);
     }
     #[repr(C)]
@@ -74,7 +68,6 @@ pub mod root {
     pub type KCW_Mixture = *mut ::std::os::raw::c_void;
     pub type KCW_MixtureDistribution = *mut ::std::os::raw::c_void;
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z27KCW_CreateMixtureFromExistsPKPvmS1_mPKvPS_"]
         pub fn KCW_CreateMixtureFromExists(
             molecules: *const root::KCW_Molecula,
             count_molecules: ::std::os::raw::c_ulong,
@@ -85,7 +78,6 @@ pub mod root {
         ) -> root::KCW_Answer;
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z17KCW_CreateMixturePK23KCW_MoleculaBuildParamsmPK19KCW_AtomBuildParamsmPKvPPv"]
         pub fn KCW_CreateMixture(
             molecules: *const root::KCW_MoleculaBuildParams,
             count_molecules: ::std::os::raw::c_ulong,
@@ -96,11 +88,9 @@ pub mod root {
         ) -> root::KCW_Answer;
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z18KCW_DestroyMixturePv"]
         pub fn KCW_DestroyMixture(mixture: root::KCW_Mixture);
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z37KCW_MixtureCreateBoltzmanDistributionPvmPKdS1_PKS1_PS_"]
         pub fn KCW_MixtureCreateBoltzmanDistribution(
             mixture: root::KCW_Mixture,
             count: ::std::os::raw::c_ulong,
@@ -118,7 +108,6 @@ pub mod root {
         pub n: *const f64,
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z49KCW_MixtureCreateBoltzmanDistributionWithCallbackPvmPF19KCW_CalculateParamsS_ES_PS_"]
         pub fn KCW_MixtureCreateBoltzmanDistributionWithCallback(
             _mixture: root::KCW_Mixture,
             count: ::std::os::raw::c_ulong,
@@ -132,7 +121,6 @@ pub mod root {
         ) -> root::KCW_Answer;
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z44KCW_MixtureCreateBoltzmanDistributionFromOnePvddPKdPS_"]
         pub fn KCW_MixtureCreateBoltzmanDistributionFromOne(
             mixture: root::KCW_Mixture,
             T: f64,
@@ -142,7 +130,6 @@ pub mod root {
         ) -> root::KCW_Answer;
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z30KCW_DestroyMixtureDistributionPv"]
         pub fn KCW_DestroyMixtureDistribution(batch: root::KCW_MixtureDistribution);
     }
     #[repr(C)]
@@ -159,7 +146,6 @@ pub mod root {
         pub size: ::std::os::raw::c_ulong,
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z39KCW_MixtureComputeTransportCoefficientsPvPKdS1_P29KCW_TransportCoefficientArray"]
         pub fn KCW_MixtureComputeTransportCoefficients(
             distribution: root::KCW_MixtureDistribution,
             n_electrons: *const f64,
@@ -168,7 +154,6 @@ pub mod root {
         ) -> root::KCW_Answer;
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z46KCW_MixtureComputeTransportCoefficientsFromOnePvddP24KCW_TransportCoefficient"]
         pub fn KCW_MixtureComputeTransportCoefficientsFromOne(
             distribution: root::KCW_MixtureDistribution,
             n_electrons: f64,
@@ -177,7 +162,6 @@ pub mod root {
         ) -> root::KCW_Answer;
     }
     unsafe extern "C" {
-        #[link_name = "\u{1}_Z36KCW_DestroyTransportCoefficientArray29KCW_TransportCoefficientArray"]
         pub fn KCW_DestroyTransportCoefficientArray(batch: root::KCW_TransportCoefficientArray);
     }
 }

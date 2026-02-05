@@ -1,4 +1,13 @@
 
+#ifndef __WRAP_H__
+#define __WRAP_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+#include <stdbool.h>
+
 typedef enum {
     KWC_OK = 0,
     KWC_NOT_OK = 1,
@@ -39,11 +48,11 @@ typedef void* KCW_MoleculeDistribution;
  * name - name of atom in context files
  * anharmonic_spectrum, rigid_rotator - parametr for kappa molecule
  */
-struct KCW_MoleculaBuildParams {
+typedef struct KCW_MoleculaBuildParams {
     const char* name;
     bool anharmonic_spectrum;
     bool rigid_rotator;
-};
+} KCW_MoleculaBuildParams;
 
 /* Create raw molecula */
 KCW_Answer KCW_CreateMolecula(KCW_MoleculaBuildParams molecula_build, const void* context, KCW_Molecula* result);
@@ -59,9 +68,9 @@ typedef void* KCW_Atom;
  * Constructor for atom
  * name - name of atom in context files
  */
-struct KCW_AtomBuildParams {
+typedef struct KCW_AtomBuildParams {
     const char* name;
-};
+} KCW_AtomBuildParams;
 /* Create raw atom */
 KCW_Answer KCW_CreateAtom(KCW_AtomBuildParams atom_build, const void* context, KCW_Atom* result);
 void KCW_DestroyAtom(KCW_Atom atom);
@@ -70,9 +79,9 @@ void KCW_DestroyAtom(KCW_Atom atom);
  * Energy distribution of atom  
  * energy - energy of atom
  */
-struct KCW_AtomDistribution {
+typedef struct KCW_AtomDistribution {
     double energy;
-};
+} KCW_AtomDistribution;
 
 /*
  * WRAP ABOUT MIXTURE
@@ -110,11 +119,11 @@ KCW_Answer KCW_MixtureCreateBoltzmanDistribution(
     KCW_Mixture mixture, unsigned long count, const double* T, const double* pressure, const double* const* n, KCW_MixtureDistribution* result
 );
 
-struct KCW_CalculateParams {
+typedef struct KCW_CalculateParams {
     double T;
     double p;
     const double* n;
-};
+} KCW_CalculateParams;
 
 KCW_Answer KCW_MixtureCreateBoltzmanDistributionWithCallback(
     KCW_Mixture _mixture, unsigned long count, KCW_CalculateParams (*Next)(void*), void* state, KCW_MixtureDistribution* result
@@ -130,16 +139,16 @@ KCW_Answer KCW_MixtureCreateBoltzmanDistributionFromOne(
 
 void KCW_DestroyMixtureDistribution(KCW_MixtureDistribution batch);
 
-struct KCW_TransportCoefficient {
+typedef struct KCW_TransportCoefficient  {
     double thermal_conductivity;
     double shear_viscosity;
     double bulk_viscosity;
-};
+} KCW_TransportCoefficient;
 
-struct KCW_TransportCoefficientArray {
+typedef struct KCW_TransportCoefficientArray{
     const KCW_TransportCoefficient* data;
     unsigned long size;
-};
+} KCW_TransportCoefficientArray;
 
 /* 
  * Compute transport coeficient using kappa::models_omega::model_omega_rs model
@@ -162,3 +171,9 @@ KCW_Answer KCW_MixtureComputeTransportCoefficientsFromOne(
 
 
 void KCW_DestroyTransportCoefficientArray(KCW_TransportCoefficientArray batch);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
+#endif // __WRAP_H__

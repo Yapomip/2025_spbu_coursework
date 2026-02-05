@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <cstdio>
 #include <filesystem>
-#include <pthread.h>
 #include <vector>
 #include <tuple>
 
@@ -196,6 +195,8 @@ int a(const char* path) {
 
 using context_type = std::pair<std::string, std::string>;
 
+extern "C" {
+
 /* 
  * Create object to data files
  * defoult files name:
@@ -217,8 +218,9 @@ KCW_Answer KCW_CreateContext(const char* path, KCW_Context* result) {
  * path_particles - path to particles file
  * path_interaction - path to interactions file
  */
-KCW_Context KCW_CreateContextFromPaths(const char* path_particles, const char* path_interaction) {
-    return reinterpret_cast<KCW_Context>(new context_type(path_particles, path_interaction));
+KCW_Answer KCW_CreateContextFromPaths(const char* path_particles, const char* path_interaction, KCW_Context* result) {
+    *result = reinterpret_cast<KCW_Context>(new context_type(path_particles, path_interaction));
+    return KCW_Answer::KWC_OK;
 }
 
 void KCW_DestroyContext(KCW_Context context) {
@@ -305,7 +307,7 @@ KCW_Answer KCW_MixtureCreateBoltzmanDistribution(
         > batch_result;
         batch_result.reserve(count);
 
-        for (int k = 0; k < count; ++k) {
+        for (unsigned long  k = 0; k < count; ++k) {
             const double T = _T[k];
             const double pressure = _pressure[k];
             const double* n = _n[k];
@@ -353,7 +355,7 @@ KCW_Answer KCW_MixtureCreateBoltzmanDistributionWithCallback(
         > batch_result;
         batch_result.reserve(count);
 
-        for (int k = 0; k < count; ++k) {
+        for (unsigned long  k = 0; k < count; ++k) {
             KCW_CalculateParams params = Next(state);
             const double T = params.T;
             const double pressure = params.p;
@@ -432,7 +434,7 @@ KCW_Answer KCW_MixtureComputeTransportCoefficients(
             ++i;
         }
     } catch (...) {
-        delete res;
+        delete[] res;
         return KCW_Answer::KWC_NOT_OK;
     }
     *result = KCW_TransportCoefficientArray {res, i};
@@ -452,8 +454,6 @@ KCW_Answer KCW_MixtureComputeTransportCoefficientsFromOne(
         auto& [_mixture, data_array] = *reinterpret_cast<mixture_distribution_type*>(distribution);
         auto& [mixture, molecules, atoms] = *reinterpret_cast<mixture_type*>(_mixture);
 
-        double n_electrons = n_electrons;
-        double perturbation = perturbation;
         auto& [T, mol_ndens, atom_ndens] = data_array[0];
         mixture.compute_transport_coefficients(T, mol_ndens, atom_ndens, n_electrons, kappa::models_omega::model_omega_rs, perturbation);
 
@@ -470,4 +470,6 @@ KCW_Answer KCW_MixtureComputeTransportCoefficientsFromOne(
 
 void KCW_DestroyTransportCoefficientArray(KCW_TransportCoefficientArray array) {
     delete[] array.data;
+}
+
 }

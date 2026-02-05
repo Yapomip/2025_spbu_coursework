@@ -1,4 +1,8 @@
 
+set(CMAKE_CXX_STANDARD 17)
+
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 add_library(kappa_c_wrap STATIC wrap.cpp)
 
 target_link_libraries(kappa_c_wrap PRIVATE kappa++::kappa++)

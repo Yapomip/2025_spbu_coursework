@@ -2,21 +2,35 @@ use cmake::Config;
 use std::path::{Path, PathBuf};
 
 fn main() -> anyhow::Result<()> {
+    
     println!("cargo:rerun-if-changed=./build.rs");
     println!("cargo:rerun-if-changed=./src/");
-
+    
     let main_dir: PathBuf = std::env::var_os("CARGO_MANIFEST_DIR").unwrap().into();
+    let bin_dir: PathBuf = std::env::var_os("OUT_DIR").unwrap().into();
     let lib_name = "kappa_c_wrap";
     let path_to_lib = main_dir.join("../").join(Path::new(lib_name));
+    let dst;
+    if cfg!(windows) {
+        unsafe {
+            std::env::set_var("LIBCLANG_PATH", "D:/Program Files/LLVM/bin/");
+        }
+        dst = Config::new("./CMakeLists.txt")
+            .define("KAPPA_C_WRAP_DIR", path_to_lib.clone())
+            .define("COPY_TO_DIR", bin_dir)
+            .build();
+        println!("cargo:rustc-link-search={}", dst.display());
+        println!("cargo:rustc-link-search={}/lib", dst.display());
+    } else {
+        // cmake build
+        dst = Config::new(path_to_lib.as_path()).build();
 
-    // cmake build
-    let dst = Config::new(path_to_lib.as_path()).build();
-
+        // path to installed libraries
+        println!("cargo:rustc-link-search={}/lib", dst.display());
+    }
     // add libraryes
     println!("cargo:rustc-link-lib={}", lib_name);
     println!("cargo:rustc-link-lib=dylib=kappa++");
-    // path to installed libraries
-    println!("cargo:rustc-link-search={}/lib", dst.display());
     // path to installed data
     println!("cargo:rustc-env=KAPPA_RESOURCES_PATH={}/data", dst.display());
 

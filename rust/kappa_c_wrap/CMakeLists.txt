@@ -1,6 +1,6 @@
 
-cmake_minimum_required(VERSION 3.5)
-project(kappa_c_wrap CXX)
+cmake_minimum_required(VERSION 3.5...3.25)
+project(kappa_c_wrap C CXX)
 
 include(FetchContent)
 
@@ -15,8 +15,8 @@ set(KAPPA_DIST_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # )
 # FetchContent_MakeAvailable(kappa)
 
-# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../kappa ${CMAKE_CURRENT_SOURCE_DIR}/../kappa/build)
-find_package(kappa++ REQUIRED PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../kappa/install)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../kappa ${CMAKE_CURRENT_SOURCE_DIR}/../kappa/build)
+# find_package(kappa++ REQUIRED PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../kappa/install)
 message(STATUS "kappa++: \"${kappa++_DIR}\"")
 
 add_subdirectory(src)
@@ -25,10 +25,12 @@ if (KAPPA_C_WRAP_EXAMPLE)
     add_subdirectory(example)
 endif()
 
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    "Config.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/kappa_c_wrapConfig.cmake"
-    INSTALL_DESTINATION "cmake"
-)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/kappa_c_wrapConfig.cmake" DESTINATION "cmake")
+if (DEFINED kappa++_DIR)
+    include(CMakePackageConfigHelpers)
+    configure_package_config_file(
+        "Config.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/kappa_c_wrapConfig.cmake"
+        INSTALL_DESTINATION "cmake"
+    )
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/kappa_c_wrapConfig.cmake" DESTINATION "cmake")
+endif()
