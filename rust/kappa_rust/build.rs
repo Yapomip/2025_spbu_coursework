@@ -3,31 +3,33 @@ use std::path::{Path, PathBuf};
 
 fn main() -> anyhow::Result<()> {
     
-    println!("cargo:rerun-if-changed=./build.rs");
-    println!("cargo:rerun-if-changed=./src/");
+    println!("cargo::rerun-if-changed=./build.rs");
+    println!("cargo::rerun-if-changed=./src/");
     
     let main_dir: PathBuf = std::env::var_os("CARGO_MANIFEST_DIR").unwrap().into();
-    let bin_dir: PathBuf = std::env::var_os("OUT_DIR").unwrap().into();
     let kappa_intall_dir = main_dir.join("../kappa/install");
     let kappa_c_wrap_intall_dir = main_dir.join("../kappa_c_wrap/install");
 
     if cfg!(windows) {
+        let bin_dir: PathBuf = std::env::var_os("OUT_DIR").unwrap().into();
         let dst = Config::new("./CMakeLists.txt")
             .define("KAPPA_C_WRAP_DIR", kappa_c_wrap_intall_dir.clone())
             .define("COPY_TO_DIR", bin_dir)
             .build_target("dll_collector")
             .generator("Ninja")
             .build();
-        println!("cargo:rustc-link-search={}", dst.display());
+        println!("cargo::rustc-link-search={}", dst.display());
+    } else {
+        println!("cargo:rustc-env=LD_LIBRARY_PATH={}/lib", kappa_intall_dir.display());
     }
     // path to libs
-    println!("cargo:rustc-link-search={}/lib", kappa_intall_dir.display());
-    println!("cargo:rustc-link-search={}/lib", kappa_c_wrap_intall_dir.display());
+    println!("cargo::rustc-link-search={}/lib", kappa_intall_dir.display());
+    println!("cargo::rustc-link-search={}/lib", kappa_c_wrap_intall_dir.display());
     // add libraryes
-    println!("cargo:rustc-link-lib=kappa_c_wrap");
-    println!("cargo:rustc-link-lib=dylib=kappa++");
+    println!("cargo::rustc-link-lib=kappa_c_wrap");
+    println!("cargo::rustc-link-lib=dylib=kappa++");
     // path to installed data
-    println!("cargo:rustc-env=KAPPA_RESOURCES_PATH={}/data", kappa_intall_dir.display());
+    println!("cargo::rustc-env=KAPPA_RESOURCES_PATH={}/data", kappa_intall_dir.display());
 
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")

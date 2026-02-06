@@ -109,9 +109,9 @@ impl<'a> MixtureBuilder<'a> {
         unsafe {
             result = KCW_CreateMixture(
                 molecula_build_params.iter().as_ref().as_ptr(),
-                molecula_build_params.len() as u32,
+                (molecula_build_params.len() as u32).into(),
                 atom_build_params.iter().as_ref().as_ptr(),
-                atom_build_params.len() as u32,
+                (atom_build_params.len() as u32).into(),
                 self.context.context,
                 &mut mixture as *mut KCW_Mixture,
             );
@@ -155,7 +155,7 @@ impl Mixture {
         unsafe {
             result = KCW_MixtureCreateBoltzmanDistribution(
                 self.mixture,
-                count as u32,
+                (count as u32).into(),
                 T.as_ptr(),
                 p.as_ptr(),
                 all_n.as_ptr(),
@@ -185,7 +185,7 @@ impl Mixture {
         unsafe {
             result = KCW_MixtureCreateBoltzmanDistributionWithCallback(
                 self.mixture,
-                count as u32,
+                (count as u32).into(),
                 Some(next),
                 state,
                 &mut distribution as *mut KCW_MixtureDistribution,
